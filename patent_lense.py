@@ -2,10 +2,14 @@ import re
 import pandas as pd
 from collections import Counter
 from functools import lru_cache
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
 # ---------------- Config ----------------
+
+# THIS LINE IS CRITICAL FOR DEPLOYMENT
+nltk.download('stopwords', quiet=True)
 
 STOPWORDS = set(stopwords.words("english"))
 
