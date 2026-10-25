@@ -8,8 +8,11 @@ from nltk.stem import PorterStemmer
 
 # ---------------- Config ----------------
 
-# THIS LINE IS CRITICAL FOR DEPLOYMENT
-nltk.download('stopwords', quiet=True)
+# Bulletproof NLTK download for Cloud deployment
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 STOPWORDS = set(stopwords.words("english"))
 
