@@ -5,12 +5,12 @@ from patent_lense import load_data, compare_years, score_phrases, validate
 # ---- Page Config ----
 st.set_page_config(page_title="Patent Lens", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
 
-# ---- Custom CSS for Premium Look ----
+# ---- Custom CSS for Premium Look & Dark Mode Support ----
 st.markdown("""
 <style>
     /* Main background */
     .stApp {
-        background-color: #F8FAFC;
+        background-color: var(--background-color);
     }
     
     /* Gradient Title */
@@ -31,9 +31,9 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* Metrics Cards */
+    /* Metrics Cards (Auto-adjusts for Dark Mode) */
     .metric-card {
-        background: white;
+        background: var(--secondary-background-color);
         padding: 20px;
         border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -41,7 +41,7 @@ st.markdown("""
         border-top: 4px solid #3B82F6;
         margin-bottom: 20px;
     }
-    .metric-card h3 { margin: 0; color: #1E293B; font-size: 16px;}
+    .metric-card h3 { margin: 0; color: var(--text-color); font-size: 16px;}
     .metric-card h1 { margin: 10px 0 0 0; color: #3B82F6; font-size: 32px;}
     
     /* Hide Streamlit Branding */
@@ -78,7 +78,7 @@ with st.sidebar:
     
     if uploaded is not None:
         df = load_data(uploaded)
-        st.success("✅ File uploaded successfully!")
+        st.success(f"✅ {uploaded.name} uploaded successfully!")
     else:
         st.info("ℹ️ Using default dataset (Indian Patents).")
         df = load_data("archive/patent.csv")
@@ -99,14 +99,11 @@ years = sorted(df["year"].unique())
 if len(years) < 2:
     st.error("The uploaded dataset does not have at least two different years. Cannot analyze trends.")
 else:
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2 = st.columns(2)
     with col1:
         base_year = st.selectbox("Base Year", years, index=0)
     with col2:
         current_year = st.selectbox("Current Year", years, index=len(years) - 1)
-    with col3:
-        st.write("Options")
-        use_trigrams = st.checkbox("Include 3-word phrases (Trigrams)", value=True)
 
     st.write("") # Spacer
 
@@ -116,7 +113,8 @@ else:
             st.error("Base year and current year must be different.")
         else:
             with st.spinner("Analyzing N-grams and calculating Bayesian scores..."):
-                result = compare_years(df, base_year, current_year, min_count=1, use_trigrams=use_trigrams)
+                # Force trigrams to always be True
+                result = compare_years(df, base_year, current_year, min_count=1, use_trigrams=True)
                 result = score_phrases(result)
 
                 if result.empty:
@@ -168,7 +166,16 @@ else:
                         else:
                             st.write("No declining phrases found.")
 
-                    # Raw data expander
+                    # Download Button
                     st.divider()
+                    csv = result.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Download Full Results as CSV",
+                        data=csv,
+                        file_name='patent_trends.csv',
+                        mime='text/csv',
+                    )
+
+                    # Raw data expander
                     with st.expander("🔍 View All Analyzed Phrases"):
                         st.dataframe(result, use_container_width=True)
